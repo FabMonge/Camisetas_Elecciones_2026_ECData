@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -105,7 +104,52 @@
     <div class="source-note" style="margin-top: 20px;"><strong>Fuente:</strong> Jurado Nacional de Elecciones (JNE)</div>
 
     <article class="story-text">
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum ultricies justo ac justo sodales, ut facilisis lorem fermentum.</p>
+        <p>Pero el salto de partido en partido no siempre garantiza el triunfo. Al analizar el desempeño histórico de cada candidato que hoy postula, cruzando la cantidad de veces que tentó un cargo público contra las veces que resultó victorioso, el panorama revela quiénes son los verdaderos "eternos candidatos".</p>
+    </article>
+
+    <div class="instrucciones-caja">
+        <span class="instrucciones-titulo">💡 Cómo leer esta matriz de densidad:</span>
+        <ul>
+            <li><strong>El color es la clave:</strong> Las celdas más oscuras indican dónde hay una mayor concentración masiva de candidatos.</li>
+            <li><strong>Explora los cuadrantes:</strong> El eje inferior mide la cantidad de veces que postularon, y el eje lateral su efectividad histórica. Pasa el cursor (o toca) cada celda para ver los detalles y ejemplos.</li>
+        </ul>
+    </div>
+    
+    <div class="anio-titulo">Matriz de eficacia: ¿Dónde se concentra la mayoría?</div>
+
+    <div class="heatmap-module">
+        <div class="heatmap-wrapper">
+            <div class="heatmap-y-labels">
+                <span>100% (Invictos)</span>
+                <span>51% - 99%</span>
+                <span>50% (Mitad)</span>
+                <span>1% - 49%</span>
+                <span>0% (Sin victorias)</span>
+            </div>
+            
+            <div id="heatmap-grid" class="heatmap-grid-container">
+                </div>
+
+            <div class="heatmap-x-labels">
+                <span>1</span>
+                <span>2</span>
+                <span>3</span>
+                <span>4</span>
+                <span>5</span>
+                <span>6</span>
+                <span>7</span>
+                <span>8</span>
+                <span>9</span>
+                <span>10+</span>
+                <div class="x-axis-title">Total de intentos previos a 2026</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="source-note" style="margin-top: 20px;"><strong>Fuente:</strong> Procesamiento propio de ECData en base a Infogob</div>
+
+    <article class="story-text">
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum ultricies justo ac justo sodales, ut facilisis lorem fermentum. Aenean dictum vitae nisi quis mollis.</p>
     </article>
 
     <footer class="special-credits-black">    

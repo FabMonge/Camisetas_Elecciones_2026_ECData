@@ -2,10 +2,9 @@
 // CONFIGURACIÓN MACRO (ARQUITECTURA)
 // ===============================================
 const CONFIG = {
-    // Fase 1: Rankings con sus 3 columnas restauradas
     rankings: [
         {
-            titulo: "Presidenciables",
+            titulo: "XXXXX",
             candidatos: [
                 { nombre: "Candidato A", partidos: 8, foto: "cand_a" },
                 { nombre: "Candidato B", partidos: 6, foto: "cand_b" },
@@ -15,7 +14,7 @@ const CONFIG = {
             ]
         },
         {
-            titulo: "Congresistas",
+            titulo: "YYYYYY",
             candidatos: [
                 { nombre: "Congresista A", partidos: 7, foto: "cong_a" },
                 { nombre: "Congresista B", partidos: 6, foto: "cong_b" },
@@ -25,7 +24,7 @@ const CONFIG = {
             ]
         },
         {
-            titulo: "Gobernadores",
+            titulo: "ZZZZZ",
             candidatos: [
                 { nombre: "Gobernador A", partidos: 9, foto: "gob_a" },
                 { nombre: "Gobernador B", partidos: 6, foto: "gob_b" },
@@ -46,7 +45,7 @@ const CONFIG = {
         }
     },
     archivos: {
-        masterJSON: "data/candidatos_master.json" 
+        masterJSON: "Data_lista/candidatos_master.json" 
     }
 };
 
@@ -97,7 +96,6 @@ function renderRankings() {
 // ===============================================
 // FASE 2: BUSCADOR Y TARJETA ÚNICA
 // ===============================================
-
 const getInitials = (name) => {
     if (!name) return "?";
     let parts = name.split(' ').filter(n => n.length > 0);
@@ -105,7 +103,6 @@ const getInitials = (name) => {
     return parts[0] ? parts[0][0].toUpperCase() : "?";
 };
 
-// Generador de las Camisetas Grises
 function generarCamisetasHTML(historial) {
     if (!historial || historial.length === 0) {
         return `<p style="text-align:left; font-size:14px; color:#888; padding: 10px 0; margin:0; font-style: italic;">Sin registros en esta categoría.</p>`;
@@ -121,7 +118,6 @@ function generarCamisetasHTML(historial) {
     `).join('');
 }
 
-// Renderiza ÚNICAMENTE la tarjeta del candidato seleccionado
 function renderTarjetaCandidato(candidato) {
     const container = document.getElementById('results-container');
     const stats = document.getElementById('search-stats');
@@ -167,12 +163,10 @@ function renderTarjetaCandidato(candidato) {
     container.innerHTML = html;
 }
 
-// Dibuja el panel de lista (Preselector)
 function renderPreselector(candidatosFiltrados) {
     const panel = document.getElementById('preselector-panel');
     const stats = document.getElementById('search-stats');
     
-    // Si no hay filtro activo, ocultar panel
     if (!candidatosFiltrados) {
         panel.style.display = "none";
         panel.innerHTML = "";
@@ -186,7 +180,7 @@ function renderPreselector(candidatosFiltrados) {
         return;
     }
 
-    const LIMITE_LISTA = 50; // Límite para el preselector
+    const LIMITE_LISTA = 50; 
     const mostrar = candidatosFiltrados.slice(0, LIMITE_LISTA);
     
     panel.style.display = "block";
@@ -194,8 +188,6 @@ function renderPreselector(candidatosFiltrados) {
     
     mostrar.forEach(cand => {
         let pActual = cand.partidoActual || "Indep.";
-        
-        // El SVG funciona como el "Avatar anónimo" circular
         html += `
             <div class="preselector-item" data-id="${cand.dni}">
                 <div class="preselector-avatar">
@@ -217,52 +209,136 @@ function renderPreselector(candidatosFiltrados) {
     panel.innerHTML = html;
     stats.innerHTML = `<span style='color:#111;'>👆 Selecciona a un candidato de la lista superior para ver su historial. (${candidatosFiltrados.length} encontrados)</span>`;
 
-    // Asignar eventos de clic a cada fila
     const items = panel.querySelectorAll('.preselector-item');
     items.forEach(item => {
         item.addEventListener('click', function() {
-            // Buscamos el objeto candidato real usando el DNI
             const dniSeleccionado = this.getAttribute('data-id');
             const candidatoSeleccionado = todosLosCandidatos.find(c => c.dni === dniSeleccionado) || todosLosCandidatos.find(c => c.nombre === this.querySelector('.preselector-name').innerText);
             
-            // Ocultamos panel de lista y mostramos SU tarjeta
             renderPreselector(null); 
             renderTarjetaCandidato(candidatoSeleccionado);
         });
     });
 }
 
-// Filtra la base de datos según inputs y dropdowns
 function filtrarBaseDatos() {
     const texto = document.getElementById('input-busqueda').value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const partidoFiltro = document.getElementById('select-partido').value;
     const cargoFiltro = document.getElementById('select-cargo').value;
 
-    // Si los tres están vacíos, no mostrar la lista
     if (texto === "" && partidoFiltro === "" && cargoFiltro === "") {
         renderPreselector(null);
-        renderTarjetaCandidato(null); // Resetea la tarjeta
+        renderTarjetaCandidato(null); 
         return;
     }
 
     const filtrados = todosLosCandidatos.filter(cand => {
         if(!cand.nombre) return false;
         const nombreLimpio = cand.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        
         const matchTexto = texto === "" || nombreLimpio.includes(texto);
         const matchP = partidoFiltro === "" || cand.partidoActual === partidoFiltro;
         const matchC = cargoFiltro === "" || cand.cargo === cargoFiltro;
-        
         return matchTexto && matchP && matchC;
     });
 
-    // Limpiamos la tarjeta de abajo y mostramos la nueva lista de resultados en el preselector
     renderTarjetaCandidato(null);
     renderPreselector(filtrados);
 }
 
 // ===============================================
-// INICIALIZACIÓN
+// FASE 3: HEATMAP NATIVO CSS GRID (10 Columnas)
+// ===============================================
+
+function renderHeatmap(candidatos) {
+    const grid = document.getElementById('heatmap-grid');
+    if (!grid) return;
+
+    // 1. Estructura de la Matriz (5 filas de Éxito x 10 columnas de Intentos)
+    // Filas (Y): 100%, 51-99%, 50%, 1-49%, 0%
+    // Columnas (X): 1 al 10+
+    const matriz = Array(5).fill(0).map(() => Array(10).fill(null).map(() => ({ count: 0, ejemplos: [] })));
+
+    let maxDensity = 0; 
+
+    // 2. Llenar la matriz con los datos
+    candidatos.forEach(c => {
+        const totalParticipaciones = c.historialElectoral ? c.historialElectoral.length : 0;
+        
+        // Ignoramos a los de 0 participaciones
+        if (totalParticipaciones > 0) {
+            let victorias = 0;
+            c.historialElectoral.forEach(h => {
+                if (h.elegido && h.elegido.toUpperCase() === "SI") victorias++;
+            });
+            
+            const porcentajeExito = (victorias / totalParticipaciones) * 100;
+            
+            // Asignar Columna (Eje X: Intentos 1 al 10+)
+            let colIndex = totalParticipaciones - 1;
+            if (colIndex > 9) colIndex = 9; // Todo de 10 a más cae en la última columna
+
+            // Asignar Fila (Eje Y: Éxito)
+            let rowIndex;
+            if (porcentajeExito === 100) rowIndex = 0;
+            else if (porcentajeExito > 50) rowIndex = 1;
+            else if (porcentajeExito === 50) rowIndex = 2;
+            else if (porcentajeExito > 0) rowIndex = 3;
+            else rowIndex = 4; // 0%
+
+            // Sumar al bucket
+            matriz[rowIndex][colIndex].count++;
+            
+            if (matriz[rowIndex][colIndex].ejemplos.length < 4) {
+                matriz[rowIndex][colIndex].ejemplos.push(c.nombre);
+            }
+
+            if (matriz[rowIndex][colIndex].count > maxDensity) {
+                maxDensity = matriz[rowIndex][colIndex].count;
+            }
+        }
+    });
+
+    // 3. Renderizar el HTML de la Matriz
+    let html = '';
+    
+    for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 10; c++) { 
+            const bucket = matriz[r][c];
+            let colorClass = 'heat-0';
+            
+            if (bucket.count > 0) {
+                // Cálculo de escala de color (1 al 5)
+                const intensidad = Math.ceil((bucket.count / maxDensity) * 5);
+                colorClass = `heat-${Math.max(1, intensidad)}`;
+            }
+
+            let tooltipHtml = '';
+            if (bucket.count > 0) {
+                const labelIntentos = (c === 9) ? "10 a más intentos" : `${c + 1} intento(s)`;
+                
+                tooltipHtml = `<div class="tooltip">
+                    <strong style="color:#fff; font-size:12px; margin-bottom:2px;">${labelIntentos}</strong>
+                    <strong>${bucket.count} candidatos</strong>
+                    <div style="margin-bottom:4px; font-size:11px; color:#ccc;">Ejemplos:</div>
+                    ${bucket.ejemplos.map(e => `• ${e}`).join('<br>')}
+                    ${bucket.count > 4 ? `<br><i style="color:#888;">...y ${bucket.count - 4} más</i>` : ''}
+                </div>`;
+            }
+
+            html += `
+                <div class="heatmap-cell ${colorClass}">
+                    ${bucket.count > 0 ? bucket.count : ''}
+                    ${tooltipHtml}
+                </div>
+            `;
+        }
+    }
+
+    grid.innerHTML = html;
+}
+
+// ===============================================
+// INICIALIZACIÓN GLOBAL
 // ===============================================
 async function inicializarBaseDatos() {
     const stats = document.getElementById('search-stats');
@@ -272,7 +348,6 @@ async function inicializarBaseDatos() {
         if (!response.ok) throw new Error("JSON no encontrado.");
         todosLosCandidatos = await response.json();
         
-        // Poblar Dropdowns
         const selectPartido = document.getElementById('select-partido');
         const partidosUnicos = [...new Set(todosLosCandidatos.map(c => c.partidoActual).filter(Boolean))].sort();
         partidosUnicos.forEach(p => { selectPartido.innerHTML += `<option value="${p}">${p}</option>`; });
@@ -281,18 +356,17 @@ async function inicializarBaseDatos() {
         const cargosUnicos = [...new Set(todosLosCandidatos.map(c => c.cargo).filter(Boolean))].sort();
         cargosUnicos.forEach(c => { selectCargo.innerHTML += `<option value="${c}">${c}</option>`; });
 
-        // Eventos
         let timeoutBusqueda;
         document.getElementById('input-busqueda').addEventListener('input', () => {
             clearTimeout(timeoutBusqueda);
-            timeoutBusqueda = setTimeout(filtrarBaseDatos, 300); // 300ms debounce
+            timeoutBusqueda = setTimeout(filtrarBaseDatos, 300);
         });
         
         selectPartido.addEventListener('change', filtrarBaseDatos);
         selectCargo.addEventListener('change', filtrarBaseDatos);
 
-        // Estado inicial
         renderTarjetaCandidato(null);
+        renderHeatmap(todosLosCandidatos);
 
     } catch (error) {
         console.error("Fallo:", error);
