@@ -281,13 +281,17 @@ path.leaflet-interactive { transition: fill 0.8s ease-in-out, stroke 0.8s ease-i
 }
 
 /* =========================================
-   13. CAMALEONES POLITICOS (NUEVOS MÓDULOS AISLADOS)
+   13. CAMALEONES POLITICOS (NUEVOS MÓDULOS)
    ========================================= */
 
-/* 13.1 FASE 1: RANKINGS (PODIOS) */
+/* 13.1 FASE 1: RANKINGS (PODIOS DINÁMICOS) */
+.ranking-filters-container { text-align: center; margin-bottom: 30px; }
+.ranking-dropdown { padding: 12px 20px; font-size: 14px; font-family: 'Arial', sans-serif; font-weight: bold; border-radius: 4px; border: 2px solid #333; outline: none; cursor: pointer; max-width: 90%; background: #fff; }
+.ranking-dropdown:focus { border-color: #F39C12; }
+
 .rankings-wrapper { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; max-width: 1000px; margin: 0 auto 30px auto; padding: 0 20px; }
 .ranking-column { background: #fdfdfd; border: 1px solid #eaeaea; border-top: 4px solid #111; border-radius: 4px; padding: 20px 15px; display: flex; flex-direction: column; align-items: center; }
-.ranking-header { font-family: 'Georgia', serif; font-size: 20px; font-weight: bold; color: #111; margin-bottom: 25px; text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; width: 100%; }
+.ranking-header { font-family: 'Georgia', serif; font-size: 18px; font-weight: bold; color: #111; margin-bottom: 25px; text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 10px; width: 100%; line-height: 1.3;}
 .chameleon-top { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; text-align: center; }
 .chameleon-top .photo { width: 140px; height: 140px; border-radius: 50%; border: 3px solid #E53935; box-shadow: 0 6px 12px rgba(0,0,0,0.1); margin-bottom: 15px; background-size: cover; background-position: center; }
 .chameleon-name { font-weight: 900; font-size: 18px; color: #111; text-transform: uppercase; line-height: 1.1; margin-bottom: 5px;}
@@ -301,18 +305,18 @@ path.leaflet-interactive { transition: fill 0.8s ease-in-out, stroke 0.8s ease-i
 .chameleon-item .info .name { font-weight: bold; font-size: 13px; color: #333; line-height: 1.2; text-transform: uppercase;}
 .chameleon-item .info .metric { font-size: 12px; color: #666; margin-top: 2px;}
 
-/* 13.2 FASE 2: BUSCADOR Y PRESELECTOR */
-.search-module-wrapper { max-width: 900px; margin: 0 auto 30px auto; padding: 0 20px; }
-.search-controls { display: flex; gap: 15px; margin-bottom: 15px; background: #fdfdfd; padding: 20px; border: 1px solid #d1d1d1; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-.input-group { flex: 1; position: relative; display: flex; align-items: center; }
-.search-bar-group { flex: 2; }
-.search-icon { position: absolute; left: 12px; color: #666; }
-.search-controls input, .search-controls select { width: 100%; padding: 12px 15px 12px 35px; border: 1px solid #ccc; border-radius: 4px; font-family: 'Arial', sans-serif; font-size: 14px; color: #333; outline: none; transition: border-color 0.2s; box-sizing: border-box; background: #fff;}
-.search-controls select { padding-left: 10px; cursor: pointer; }
-.search-controls input:focus, .search-controls select:focus { border-color: #111; }
-.search-stats { font-size: 14px; color: #666; margin-bottom: 20px; font-weight: bold; padding: 10px; background: #f4f4f4; border-radius: 4px; text-align: center;}
+/* 13.2 FASE 2: COMPARADOR (DOS COLUMNAS) */
+.comparator-wrapper { display: flex; gap: 30px; max-width: 1100px; margin: 0 auto 30px auto; padding: 0 20px; align-items: flex-start; }
+.comparator-column { flex: 1; display: flex; flex-direction: column; position: relative; min-width: 0; }
 
-.preselector-container { background: #fff; border: 1px solid #111; border-radius: 6px; max-height: 350px; overflow-y: auto; margin-bottom: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+.comparator-controls { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; background: #fdfdfd; padding: 15px; border: 1px solid #d1d1d1; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+.comparator-select { width: 100%; border: 1px solid #ccc; font-weight: normal; padding: 10px; font-size: 14px;}
+.input-group { position: relative; display: flex; align-items: center; width: 100%;}
+.search-icon { position: absolute; left: 12px; color: #666; }
+.comparator-controls input { width: 100%; padding: 12px 15px 12px 35px; border: 1px solid #ccc; border-radius: 4px; font-family: 'Arial', sans-serif; font-size: 14px; color: #333; outline: none; transition: border-color 0.2s; box-sizing: border-box; background: #fff;}
+.comparator-controls input:focus { border-color: #111; }
+
+.preselector-container { background: #fff; border: 1px solid #111; border-radius: 6px; max-height: 350px; overflow-y: auto; margin-bottom: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); position: absolute; top: 120px; left: 0; width: 100%; z-index: 100;}
 .preselector-item { display: flex; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; }
 .preselector-item:hover { background: #f4f4f4; }
 .preselector-avatar { width: 35px; height: 35px; border-radius: 50%; background: #e0e0e0; margin-right: 15px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; flex-shrink: 0; border: 1px solid #ccc;}
@@ -326,12 +330,12 @@ path.leaflet-interactive { transition: fill 0.8s ease-in-out, stroke 0.8s ease-i
 .card-header-flex { display: flex; align-items: center; gap: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 20px; }
 .avatar-initials { width: 60px; height: 60px; border-radius: 50%; background-color: #eee; color: #333; display: flex; justify-content: center; align-items: center; font-weight: 900; font-size: 24px; flex-shrink: 0; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
 .card-info { flex: 1; }
-.card-name { font-weight: 900; font-size: 24px; color: #111; text-transform: uppercase; margin-bottom: 4px; line-height: 1.1;}
-.card-current-party { font-size: 14px; color: #555; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;}
+.card-name { font-weight: 900; font-size: 20px; color: #111; text-transform: uppercase; margin-bottom: 4px; line-height: 1.1;}
+.card-current-party { font-size: 13px; color: #555; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;}
 
 .histories-container { display: flex; flex-direction: column; gap: 20px; }
 .history-section { background: #fafafa; border: 1px dashed #ddd; border-radius: 6px; padding: 20px; }
-.history-title { font-family: 'Georgia', serif; font-size: 16px; font-weight: bold; color: #111; margin-bottom: 20px; text-align: left; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
+.history-title { font-family: 'Georgia', serif; font-size: 14px; font-weight: bold; color: #111; margin-bottom: 20px; text-align: left; border-bottom: 1px solid #ddd; padding-bottom: 8px; }
 
 .jersey-track { display: flex; flex-wrap: wrap; gap: 15px; justify-content: flex-start; }
 .jersey-item { display: flex; flex-direction: column; align-items: center; width: 75px; text-align: center; }
@@ -340,14 +344,13 @@ path.leaflet-interactive { transition: fill 0.8s ease-in-out, stroke 0.8s ease-i
 .jersey-party-name { font-size: 9px; color: #666; line-height: 1.2; font-weight: bold; text-transform: uppercase; }
 .jersey-role { font-size: 9px; color: #999; font-style: italic; margin-top: 3px;}
 
-/* 13.3 FASE 3: HEATMAP NATIVO CSS GRID (10 Columnas) */
+/* 13.3 FASE 3: HEATMAP NATIVO CSS GRID */
 .heatmap-module { max-width: 900px; margin: 0 auto 40px auto; padding: 0 20px; }
 .heatmap-wrapper { display: flex; flex-wrap: wrap; background: #fff; padding: 20px 10px; border: 1px solid #eaeaea; border-top: 4px solid #111; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
 
 .heatmap-y-labels { display: flex; flex-direction: column; justify-content: space-around; width: 130px; padding-right: 15px; font-size: 12px; font-weight: bold; color: #555; text-align: right; }
 .heatmap-y-labels span { flex: 1; display: flex; align-items: center; justify-content: flex-end; }
 
-/* Grilla configurada a 10 espacios horizontales */
 .heatmap-grid-container { flex: 1; display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(5, 1fr); gap: 4px; min-height: 400px; }
 
 .heatmap-x-labels { width: 100%; display: flex; margin-top: 10px; margin-left: 145px; position: relative; padding-bottom: 25px; }
@@ -357,12 +360,10 @@ path.leaflet-interactive { transition: fill 0.8s ease-in-out, stroke 0.8s ease-i
 .heatmap-cell { border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 13px; font-weight: 900; color: transparent; cursor: pointer; transition: transform 0.1s, box-shadow 0.2s; position: relative;}
 .heatmap-cell:hover { transform: scale(1.05); box-shadow: 0 4px 8px rgba(0,0,0,0.15); z-index: 10; color: #fff;}
 
-/* Tooltip Nativo CSS */
 .heatmap-cell .tooltip { visibility: hidden; position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%); width: 220px; background-color: rgba(17,17,17,0.95); color: #fff; text-align: left; padding: 12px; border-radius: 6px; z-index: 100; font-size: 12px; font-weight: normal; pointer-events: none; opacity: 0; transition: opacity 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.2);}
 .heatmap-cell .tooltip strong { color: #F39C12; font-size: 14px; display: block; margin-bottom: 5px; }
 .heatmap-cell:hover .tooltip { visibility: visible; opacity: 1; }
 
-/* Escala de Colores (Rojo ECData) */
 .heat-0 { background-color: #f8f9fa; border: 1px solid #eee; color: #aaa; pointer-events: none;} 
 .heat-1 { background-color: #fde0dc; color: #333;}
 .heat-2 { background-color: #f9a9a3; color: #111;}
@@ -370,18 +371,38 @@ path.leaflet-interactive { transition: fill 0.8s ease-in-out, stroke 0.8s ease-i
 .heat-4 { background-color: #e53935; color: #fff;} 
 .heat-5 { background-color: #b71c1c; color: #fff;} 
 
-/* MEDIA QUERIES NUEVAS (MÓDULO CAMALEONES) */
+/* 13.4 FASE 4: TIMELINE 1D */
+.timeline-module { max-width: 1000px; margin: 0 auto 40px auto; padding: 0 20px; }
+.timeline-wrapper { height: 400px; width: 100%; position: relative; background: #fff; border: 1px solid #eee; padding: 15px; border-radius: 6px; box-sizing: border-box; }
+
+/* MEDIA QUERIES NUEVAS */
 @media (max-width: 850px) {
     .rankings-wrapper { grid-template-columns: 1fr; gap: 40px; }
-    .search-controls { flex-direction: column; gap: 10px; }
+    .comparator-wrapper { flex-direction: column; gap: 40px; }
     .card-header-flex { flex-direction: column; align-items: flex-start; text-align: left; gap: 15px;}
     .jersey-track { justify-content: center; }
     .history-title { text-align: center; }
     
-    .heatmap-y-labels { width: 60px; font-size: 10px; padding-right: 8px; }
-    .heatmap-x-labels { margin-left: 68px; }
+    .heatmap-y-labels { width: 80px; font-size: 10px; padding-right: 8px; }
+    .heatmap-x-labels { margin-left: 88px; }
     .heatmap-x-labels span { font-size: 10px; }
     .heatmap-grid-container { min-height: 300px; gap: 2px;}
     .heatmap-cell:hover { color: transparent; }
     .heatmap-cell .tooltip { width: 180px; bottom: 50%; left: 10%; transform: translate(0, 50%); }
+    
+    .timeline-wrapper { height: 350px; padding: 5px; }
+}
+
+
+/* =========================================
+   NUEVO CSS: FILTROS SUCESIVOS COMPARADOR
+   ========================================= */
+.filters-row { display: flex; gap: 10px; width: 100%; }
+.filters-row select { flex: 1; }
+.main-name-select { font-weight: bold; font-size: 15px; color: #111; border-color: #333; }
+.main-name-select:disabled { background-color: #f4f4f4; color: #999; border-color: #ddd; cursor: not-allowed; font-weight: normal; }
+
+/* En móviles, apilamos los filtros pequeños */
+@media (max-width: 600px) {
+    .filters-row { flex-direction: column; gap: 8px; }
 }

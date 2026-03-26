@@ -2,38 +2,6 @@
 // CONFIGURACIÓN MACRO (ARQUITECTURA)
 // ===============================================
 const CONFIG = {
-    rankings: [
-        {
-            titulo: "XXXXX",
-            candidatos: [
-                { nombre: "Candidato A", partidos: 8, foto: "cand_a" },
-                { nombre: "Candidato B", partidos: 6, foto: "cand_b" },
-                { nombre: "Candidato C", partidos: 5, foto: "cand_c" },
-                { nombre: "Candidato D", partidos: 4, foto: "cand_d" },
-                { nombre: "Candidato E", partidos: 4, foto: "cand_e" }
-            ]
-        },
-        {
-            titulo: "YYYYYY",
-            candidatos: [
-                { nombre: "Congresista A", partidos: 7, foto: "cong_a" },
-                { nombre: "Congresista B", partidos: 6, foto: "cong_b" },
-                { nombre: "Congresista C", partidos: 5, foto: "cong_c" },
-                { nombre: "Congresista D", partidos: 5, foto: "cong_d" },
-                { nombre: "Congresista E", partidos: 3, foto: "cong_e" }
-            ]
-        },
-        {
-            titulo: "ZZZZZ",
-            candidatos: [
-                { nombre: "Gobernador A", partidos: 9, foto: "gob_a" },
-                { nombre: "Gobernador B", partidos: 6, foto: "gob_b" },
-                { nombre: "Gobernador C", partidos: 4, foto: "gob_c" },
-                { nombre: "Gobernador D", partidos: 4, foto: "gob_d" },
-                { nombre: "Gobernador E", partidos: 3, foto: "gob_e" }
-            ]
-        }
-    ],
     colores: {
         partidos: {
             "FUERZA POPULAR": "#F39C12",
@@ -50,18 +18,78 @@ const CONFIG = {
 };
 
 let todosLosCandidatos = []; 
+let timelineChartInstance = null; // Instancia para el gráfico de la Fase 4
 
 // ===============================================
-// FASE 1: RENDERIZADO DE RANKINGS
+// UTILIDADES COMUNES
 // ===============================================
-function renderRankings() {
-    const wrapper = document.querySelector('.rankings-wrapper');
+const getInitials = (name) => {
+    if (!name) return "?";
+    let parts = name.split(' ').filter(n => n.length > 0);
+    if(parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return parts[0] ? parts[0][0].toUpperCase() : "?";
+};
+
+// Convierte colores HEX a RGBA para las burbujas
+function hexToRgba(hex, alpha) {
+    let c;
+    if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+        c= hex.substring(1).split('');
+        if(c.length== 3){
+            c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c= '0x'+c.join('');
+        return 'rgba('+[(c>>16)&255, (c>>8)&255, c&255].join(',')+','+alpha+')';
+    }
+    return `rgba(150,150,150,${alpha})`;
+}
+
+// ===============================================
+// FASE 1: RANKINGS DINÁMICOS Y FILTRADOS
+// ===============================================
+function calcularRankings(candidatos, partidoFiltro = "ALL") {
+    let pool = candidatos;
+    if (partidoFiltro !== "ALL") {
+        pool = candidatos.filter(c => c.partidoActual === partidoFiltro);
+    }
+
+    let rankingCamisetas = pool.map(c => {
+        let partidosUsados = c.historialElectoral.map(h => h.partido).filter(Boolean);
+        let uniqueParties = new Set(partidosUsados);
+        return { ...c, metrica: uniqueParties.size };
+    }).sort((a, b) => b.metrica - a.metrica).slice(0, 5);
+
+    let rankingMilitancias = pool.map(c => {
+        let partidosMilitados = c.historialPartidario.map(h => h.partido).filter(Boolean);
+        let uniqueMilitancias = new Set(partidosMilitados);
+        return { ...c, metrica: uniqueMilitancias.size };
+    }).sort((a, b) => b.metrica - a.metrica).slice(0, 5);
+
+    let rankingDerrotas = pool.map(c => {
+        let derrotas = c.historialElectoral.filter(h => h.elegido && h.elegido.toUpperCase() === "NO").length;
+        return { ...c, metrica: derrotas };
+    }).sort((a, b) => b.metrica - a.metrica).slice(0, 5);
+
+    return [
+        { titulo: "Top 5 con más cambios de camiseta para postular", data: rankingCamisetas, label: "partidos" },
+        { titulo: "Top 5 con más militancias en organizaciones políticas", data: rankingMilitancias, label: "afiliaciones" },
+        { titulo: "Top 5 que postularon más veces sin éxito", data: rankingDerrotas, label: "derrotas" }
+    ];
+}
+
+function renderRankings(rankingsData) {
+    const wrapper = document.getElementById('rankings-wrapper');
     if(!wrapper) return;
 
     let html = '';
-    CONFIG.rankings.forEach(ranking => {
-        const top1 = ranking.candidatos[0];
-        const resto = ranking.candidatos.slice(1); 
+    rankingsData.forEach(ranking => {
+        if(ranking.data.length === 0) {
+            html += `<div class="ranking-column"><div class="ranking-header">${ranking.titulo}</div><p style="color:#888; font-size:13px;">Sin datos para este filtro</p></div>`;
+            return;
+        }
+
+        const top1 = ranking.data[0];
+        const resto = ranking.data.slice(1); 
 
         let colHtml = `
             <div class="ranking-column">
@@ -69,7 +97,7 @@ function renderRankings() {
                 <div class="chameleon-top">
                     <div class="photo" style="background-color: #eee;"></div>
                     <div class="chameleon-name">${top1.nombre}</div>
-                    <div class="chameleon-metric"><span>${top1.partidos}</span> partidos</div>
+                    <div class="chameleon-metric"><span>${top1.metrica}</span> ${ranking.label}</div>
                 </div>
                 <div class="chameleon-list">
         `;
@@ -81,7 +109,7 @@ function renderRankings() {
                     <div class="photo" style="background-color: #eee;"></div>
                     <div class="info">
                         <div class="name">${cand.nombre}</div>
-                        <div class="metric">${cand.partidos} partidos</div>
+                        <div class="metric">${cand.metrica} ${ranking.label}</div>
                     </div>
                 </div>
             `;
@@ -94,18 +122,11 @@ function renderRankings() {
 }
 
 // ===============================================
-// FASE 2: BUSCADOR Y TARJETA ÚNICA
+// FASE 2: COMPARADOR CARA A CARA
 // ===============================================
-const getInitials = (name) => {
-    if (!name) return "?";
-    let parts = name.split(' ').filter(n => n.length > 0);
-    if(parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-    return parts[0] ? parts[0][0].toUpperCase() : "?";
-};
-
 function generarCamisetasHTML(historial) {
     if (!historial || historial.length === 0) {
-        return `<p style="text-align:left; font-size:14px; color:#888; padding: 10px 0; margin:0; font-style: italic;">Sin registros en esta categoría.</p>`;
+        return `<p style="text-align:left; font-size:14px; color:#888; padding: 10px 0; margin:0; font-style: italic;">Sin registros previos.</p>`;
     }
     
     return historial.map(h => `
@@ -118,17 +139,16 @@ function generarCamisetasHTML(historial) {
     `).join('');
 }
 
-function renderTarjetaCandidato(candidato) {
-    const container = document.getElementById('results-container');
-    const stats = document.getElementById('search-stats');
+function renderTarjetaCandidato(candidato, containerId) {
+    const container = document.getElementById(containerId);
     
     if (!candidato) {
-        container.innerHTML = "";
-        stats.innerHTML = "<span style='color:#666;'>Busca y selecciona un candidato en la lista superior para ver su historial.</span>";
+        container.innerHTML = `
+            <div style="background:#f9f9f9; border: 1px dashed #ccc; padding:40px 20px; text-align:center; border-radius:6px; color:#888;">
+                Utiliza el buscador superior para seleccionar a un candidato y ver su historial aquí.
+            </div>`;
         return;
     }
-
-    stats.innerHTML = `<span style='color:#2e7d32; font-weight:bold;'>✔️ Mostrando perfil de: ${candidato.nombre}</span>`;
 
     let pActual = candidato.partidoActual || "INDEPENDIENTE";
     let colorPartido = CONFIG.colores.partidos[pActual] || CONFIG.colores.partidos["DEFECTO"];
@@ -143,17 +163,17 @@ function renderTarjetaCandidato(candidato) {
                 <div class="avatar-initials" style="color: ${colorPartido}; background-color: ${colorPartido}20;">${iniciales}</div>
                 <div class="card-info">
                     <div class="card-name">${candidato.nombre || 'Desconocido'}</div>
-                    <div class="card-current-party">Postula por: ${pActual} (${candidato.cargo || ''})</div>
+                    <div class="card-current-party">Postula por: ${pActual} <br> <span style="font-size:11px; color:#888;">(${candidato.cargo || ''})</span></div>
                 </div>
             </div>
             
             <div class="histories-container">
                 <div class="history-section">
-                    <div class="history-title">Historial Electoral (La camiseta en la cancha)</div>
+                    <div class="history-title">Postulaciones (Orden cronológico)</div>
                     <div class="jersey-track">${camElectorales}</div>
                 </div>
                 <div class="history-section">
-                    <div class="history-title">Historial Partidario (El carnet de militancia)</div>
+                    <div class="history-title">Militancia Partidaria</div>
                     <div class="jersey-track">${camPartidarias}</div>
                 </div>
             </div>
@@ -163,129 +183,105 @@ function renderTarjetaCandidato(candidato) {
     container.innerHTML = html;
 }
 
-function renderPreselector(candidatosFiltrados) {
-    const panel = document.getElementById('preselector-panel');
-    const stats = document.getElementById('search-stats');
-    
-    if (!candidatosFiltrados) {
-        panel.style.display = "none";
-        panel.innerHTML = "";
-        return;
-    }
+function setupBuscadorComparador(inputId, selectId, panelId, resultId) {
+    const input = document.getElementById(inputId);
+    const select = document.getElementById(selectId);
+    const panel = document.getElementById(panelId);
+    let timeout;
 
-    if (candidatosFiltrados.length === 0) {
-        panel.style.display = "block";
-        panel.innerHTML = `<div style="padding: 20px; text-align: center; color: #888;">No se encontraron candidatos que coincidan con tu búsqueda.</div>`;
-        stats.innerHTML = "";
-        return;
-    }
+    const ejecutarBusqueda = () => {
+        const val = input.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const partidoFiltro = select.value;
+        
+        if (!val || val.length < 3) {
+            panel.style.display = "none";
+            return;
+        }
 
-    const LIMITE_LISTA = 50; 
-    const mostrar = candidatosFiltrados.slice(0, LIMITE_LISTA);
-    
-    panel.style.display = "block";
-    let html = '';
-    
-    mostrar.forEach(cand => {
-        let pActual = cand.partidoActual || "Indep.";
-        html += `
-            <div class="preselector-item" data-id="${cand.dni}">
-                <div class="preselector-avatar">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                </div>
-                <div class="preselector-info">
-                    <div class="preselector-name">${cand.nombre}</div>
-                    <div class="preselector-detail">${cand.cargo || ''}</div>
-                </div>
-                <div class="preselector-badge">${pActual}</div>
-            </div>
-        `;
-    });
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            const matches = todosLosCandidatos.filter(cand => {
+                if(!cand.nombre) return false;
+                const nom = cand.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const matchText = nom.includes(val);
+                const matchPartido = partidoFiltro === "" || cand.partidoActual === partidoFiltro;
+                return matchText && matchPartido;
+            }).slice(0, 15);
 
-    if (candidatosFiltrados.length > LIMITE_LISTA) {
-        html += `<div style="padding: 10px; text-align: center; font-size:12px; color: #888; background:#f9f9f9;">Hay más resultados. Sigue escribiendo para afinar la búsqueda.</div>`;
-    }
+            if (matches.length > 0) {
+                panel.style.display = "block";
+                let html = '';
+                matches.forEach(cand => {
+                    let pActual = cand.partidoActual || "Indep.";
+                    html += `
+                        <div class="preselector-item" data-id="${cand.dni}">
+                            <div class="preselector-info">
+                                <div class="preselector-name">${cand.nombre}</div>
+                            </div>
+                            <div class="preselector-badge">${pActual}</div>
+                        </div>
+                    `;
+                });
+                panel.innerHTML = html;
 
-    panel.innerHTML = html;
-    stats.innerHTML = `<span style='color:#111;'>👆 Selecciona a un candidato de la lista superior para ver su historial. (${candidatosFiltrados.length} encontrados)</span>`;
+                panel.querySelectorAll('.preselector-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const dniSeleccionado = this.getAttribute('data-id');
+                        const candidato = todosLosCandidatos.find(c => c.dni === dniSeleccionado);
+                        input.value = ""; 
+                        panel.style.display = "none";
+                        renderTarjetaCandidato(candidato, resultId);
+                    });
+                });
+            } else {
+                panel.style.display = "block";
+                panel.innerHTML = `<div style="padding: 15px; color: #888; font-size:13px;">No hay coincidencias para ese filtro.</div>`;
+            }
+        }, 300);
+    };
 
-    const items = panel.querySelectorAll('.preselector-item');
-    items.forEach(item => {
-        item.addEventListener('click', function() {
-            const dniSeleccionado = this.getAttribute('data-id');
-            const candidatoSeleccionado = todosLosCandidatos.find(c => c.dni === dniSeleccionado) || todosLosCandidatos.find(c => c.nombre === this.querySelector('.preselector-name').innerText);
-            
-            renderPreselector(null); 
-            renderTarjetaCandidato(candidatoSeleccionado);
-        });
+    input.addEventListener('input', ejecutarBusqueda);
+    select.addEventListener('change', ejecutarBusqueda); 
+
+    document.addEventListener("click", function (e) {
+        if (e.target !== input && e.target !== select && e.target !== panel && !panel.contains(e.target)) {
+            panel.style.display = "none";
+        }
     });
 }
 
-function filtrarBaseDatos() {
-    const texto = document.getElementById('input-busqueda').value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const partidoFiltro = document.getElementById('select-partido').value;
-    const cargoFiltro = document.getElementById('select-cargo').value;
-
-    if (texto === "" && partidoFiltro === "" && cargoFiltro === "") {
-        renderPreselector(null);
-        renderTarjetaCandidato(null); 
-        return;
-    }
-
-    const filtrados = todosLosCandidatos.filter(cand => {
-        if(!cand.nombre) return false;
-        const nombreLimpio = cand.nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        const matchTexto = texto === "" || nombreLimpio.includes(texto);
-        const matchP = partidoFiltro === "" || cand.partidoActual === partidoFiltro;
-        const matchC = cargoFiltro === "" || cand.cargo === cargoFiltro;
-        return matchTexto && matchP && matchC;
-    });
-
-    renderTarjetaCandidato(null);
-    renderPreselector(filtrados);
-}
-
 // ===============================================
-// FASE 3: HEATMAP NATIVO CSS GRID (10 Columnas)
+// FASE 3: HEATMAP NATIVO CSS GRID (Partidos vs Postulaciones)
 // ===============================================
-
-function renderHeatmap(candidatos) {
+function renderHeatmap(candidatos, partidoFiltro = "ALL") {
     const grid = document.getElementById('heatmap-grid');
     if (!grid) return;
 
-    // 1. Estructura de la Matriz (5 filas de Éxito x 10 columnas de Intentos)
-    // Filas (Y): 100%, 51-99%, 50%, 1-49%, 0%
-    // Columnas (X): 1 al 10+
-    const matriz = Array(5).fill(0).map(() => Array(10).fill(null).map(() => ({ count: 0, ejemplos: [] })));
+    let pool = candidatos;
+    if (partidoFiltro !== "ALL") {
+        pool = candidatos.filter(c => c.partidoActual === partidoFiltro);
+    }
 
+    const matriz = Array(5).fill(0).map(() => Array(10).fill(null).map(() => ({ count: 0, ejemplos: [] })));
     let maxDensity = 0; 
 
-    // 2. Llenar la matriz con los datos
-    candidatos.forEach(c => {
+    pool.forEach(c => {
         const totalParticipaciones = c.historialElectoral ? c.historialElectoral.length : 0;
         
-        // Ignoramos a los de 0 participaciones
         if (totalParticipaciones > 0) {
-            let victorias = 0;
-            c.historialElectoral.forEach(h => {
-                if (h.elegido && h.elegido.toUpperCase() === "SI") victorias++;
-            });
+            const partidosUsados = c.historialElectoral.map(h => h.partido).filter(Boolean);
+            const uniqueParties = new Set(partidosUsados).size;
             
-            const porcentajeExito = (victorias / totalParticipaciones) * 100;
-            
-            // Asignar Columna (Eje X: Intentos 1 al 10+)
             let colIndex = totalParticipaciones - 1;
-            if (colIndex > 9) colIndex = 9; // Todo de 10 a más cae en la última columna
+            if (colIndex > 9) colIndex = 9;
 
-            // Asignar Fila (Eje Y: Éxito)
             let rowIndex;
-            if (porcentajeExito === 100) rowIndex = 0;
-            else if (porcentajeExito > 50) rowIndex = 1;
-            else if (porcentajeExito === 50) rowIndex = 2;
-            else if (porcentajeExito > 0) rowIndex = 3;
-            else rowIndex = 4; // 0%
+            if (uniqueParties >= 5) rowIndex = 0;
+            else if (uniqueParties === 4) rowIndex = 1;
+            else if (uniqueParties === 3) rowIndex = 2;
+            else if (uniqueParties === 2) rowIndex = 3;
+            else rowIndex = 4; // 1 partido
 
-            // Sumar al bucket
             matriz[rowIndex][colIndex].count++;
             
             if (matriz[rowIndex][colIndex].ejemplos.length < 4) {
@@ -298,26 +294,24 @@ function renderHeatmap(candidatos) {
         }
     });
 
-    // 3. Renderizar el HTML de la Matriz
     let html = '';
-    
     for (let r = 0; r < 5; r++) {
         for (let c = 0; c < 10; c++) { 
             const bucket = matriz[r][c];
             let colorClass = 'heat-0';
             
             if (bucket.count > 0) {
-                // Cálculo de escala de color (1 al 5)
                 const intensidad = Math.ceil((bucket.count / maxDensity) * 5);
                 colorClass = `heat-${Math.max(1, intensidad)}`;
             }
 
             let tooltipHtml = '';
             if (bucket.count > 0) {
-                const labelIntentos = (c === 9) ? "10 a más intentos" : `${c + 1} intento(s)`;
+                const labelIntentos = (c === 9) ? "10 a más postulaciones" : `${c + 1} postulación(es)`;
+                const labelPartidos = (r === 0) ? "5 o más partidos" : `${5 - r} partido(s)`;
                 
                 tooltipHtml = `<div class="tooltip">
-                    <strong style="color:#fff; font-size:12px; margin-bottom:2px;">${labelIntentos}</strong>
+                    <strong style="color:#fff; font-size:12px; margin-bottom:2px;">${labelIntentos} con ${labelPartidos}</strong>
                     <strong>${bucket.count} candidatos</strong>
                     <div style="margin-bottom:4px; font-size:11px; color:#ccc;">Ejemplos:</div>
                     ${bucket.ejemplos.map(e => `• ${e}`).join('<br>')}
@@ -338,43 +332,265 @@ function renderHeatmap(candidatos) {
 }
 
 // ===============================================
-// INICIALIZACIÓN GLOBAL
+// FASE 4: TIMELINE 1D (Antigüedad de Afiliación)
+// ===============================================
+
+// Fecha límite oficial: 12 de Julio de 2025
+const FECHA_LIMITE = new Date(2025, 6, 12); // Meses en JS van de 0 a 11
+
+// Plugin para la Línea Roja de Cierre
+const deadlinePlugin = {
+    id: 'deadlinePlugin',
+    afterDraw(chart) {
+        const ctx = chart.ctx;
+        const xAxis = chart.scales.x;
+        const xPos = xAxis.getPixelForValue(FECHA_LIMITE.getTime()); 
+
+        if (xPos >= chart.chartArea.left && xPos <= chart.chartArea.right) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(xPos, chart.chartArea.top);
+            ctx.lineTo(xPos, chart.chartArea.bottom);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'rgba(229, 57, 53, 0.9)'; // Rojo ECData
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+
+            ctx.fillStyle = 'rgba(229, 57, 53, 1)';
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText('12 JUL 2025', xPos - 75, chart.chartArea.top + 15);
+            ctx.fillText('CIERRE PADRÓN', xPos - 100, chart.chartArea.top + 30);
+            ctx.restore();
+        }
+    }
+};
+Chart.register(deadlinePlugin);
+
+// Extrae el timestamp de inicio de afiliación (Requiere la variable fechaInicio generada en R)
+function extractAffiliationTimestamp(candidato) {
+    if (!candidato.partidoActual || !candidato.historialPartidario) return null;
+
+    const activeAffiliation = candidato.historialPartidario.find(h =>
+        h.partido === candidato.partidoActual && h.anio.includes("Act.")
+    );
+
+    if (activeAffiliation && activeAffiliation.fechaInicio) {
+        // Asumiendo formato DD/MM/YYYY
+        const parts = activeAffiliation.fechaInicio.split('/');
+        if (parts.length === 3) {
+            return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+        }
+    }
+    return null;
+}
+
+// Calcula los días exactos entre afiliación y límite
+function getDiasAntiguedad(timestampAfiliacion) {
+    const msPerDay = 1000 * 60 * 60 * 24;
+    return Math.round((FECHA_LIMITE.getTime() - timestampAfiliacion) / msPerDay);
+}
+
+function renderTimeline(candidatos, partidoFiltro = "ALL") {
+    const ctx = document.getElementById('timeline-chart').getContext('2d');
+    if (timelineChartInstance) timelineChartInstance.destroy();
+
+    let datasets = [];
+
+    if (partidoFiltro === "ALL") {
+        // VISTA PROMEDIO
+        const partyStats = {};
+        candidatos.forEach(c => {
+            const timestamp = extractAffiliationTimestamp(c);
+            if (timestamp !== null && timestamp <= FECHA_LIMITE.getTime()) {
+                const p = c.partidoActual;
+                if (!partyStats[p]) partyStats[p] = { sumTimestamp: 0, count: 0 };
+                partyStats[p].sumTimestamp += timestamp;
+                partyStats[p].count++;
+            }
+        });
+
+        const dataPoints = Object.keys(partyStats).map(p => {
+            const avgTimestamp = partyStats[p].sumTimestamp / partyStats[p].count;
+            return { 
+                x: avgTimestamp, 
+                y: 0, 
+                partido: p, 
+                count: partyStats[p].count,
+                diasPromedio: getDiasAntiguedad(avgTimestamp)
+            };
+        });
+
+        datasets.push({
+            label: 'Promedio por Partido',
+            data: dataPoints,
+            backgroundColor: dataPoints.map(d => hexToRgba(CONFIG.colores.partidos[d.partido] || CONFIG.colores.partidos["DEFECTO"], 0.85)),
+            borderColor: '#111',
+            borderWidth: 1.5,
+            pointRadius: 8,
+            pointHoverRadius: 12
+        });
+
+    } else {
+        // VISTA ENJAMBRE (JITTER)
+        const dataPoints = [];
+        candidatos.forEach(c => {
+            if (c.partidoActual === partidoFiltro) {
+                const timestamp = extractAffiliationTimestamp(c);
+                if (timestamp !== null && timestamp <= FECHA_LIMITE.getTime()) {
+                    dataPoints.push({
+                        x: timestamp,
+                        y: (Math.random() * 2) - 1, 
+                        nombre: c.nombre,
+                        partido: c.partidoActual,
+                        diasAfiliado: getDiasAntiguedad(timestamp)
+                    });
+                }
+            }
+        });
+
+        let pColor = CONFIG.colores.partidos[partidoFiltro] || CONFIG.colores.partidos["DEFECTO"];
+        datasets.push({
+            label: 'Afiliados Vigentes',
+            data: dataPoints,
+            backgroundColor: hexToRgba(pColor, 0.7),
+            borderColor: hexToRgba(pColor, 1),
+            borderWidth: 1,
+            pointRadius: 5,
+            pointHoverRadius: 8
+        });
+    }
+
+    timelineChartInstance = new Chart(ctx, {
+        type: 'scatter',
+        data: { datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            layout: { padding: { top: 30, right: 20, left: 20 } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(17,17,17,0.95)',
+                    titleFont: { size: 14, family: 'Arial', weight: 'bold' },
+                    bodyFont: { size: 13, family: 'Arial', lineHeight: 1.4 },
+                    padding: 12,
+                    callbacks: {
+                        label: (context) => {
+                            const p = context.raw;
+                            const fechaLegible = new Date(p.x).toLocaleDateString('es-PE', { year: 'numeric', month: 'short', day: 'numeric' });
+                            
+                            if (partidoFiltro === "ALL") {
+                                return [
+                                    `Partido: ${p.partido}`,
+                                    `Militantes contabilizados: ${p.count}`,
+                                    `Afiliación promedio: ${fechaLegible}`,
+                                    `Antigüedad promedio: ${p.diasPromedio} días antes del cierre`
+                                ];
+                            } else {
+                                return [
+                                    `Candidato: ${p.nombre}`,
+                                    `Se afilió el: ${fechaLegible}`,
+                                    `Antigüedad: ${p.diasAfiliado} días antes del cierre`
+                                ];
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    title: { display: true, text: 'Línea de tiempo (Años)', font: { weight: 'bold', size: 13, family: 'Arial' } },
+                    min: new Date(2000, 0, 1).getTime(), 
+                    max: new Date(2025, 11, 31).getTime(),
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: {
+                        callback: function(value) { return new Date(value).getFullYear(); },
+                        maxTicksLimit: 12,
+                        font: { family: 'Arial' }
+                    }
+                },
+                y: { display: false, min: -2, max: 2 }
+            }
+        }
+    });
+}
+
+// ===============================================
+// CARGA MAESTRA E INYECCIÓN DE LA ELECCIÓN 2026
 // ===============================================
 async function inicializarBaseDatos() {
-    const stats = document.getElementById('search-stats');
-    
     try {
         const response = await fetch(CONFIG.archivos.masterJSON);
         if (!response.ok) throw new Error("JSON no encontrado.");
         todosLosCandidatos = await response.json();
         
-        const selectPartido = document.getElementById('select-partido');
-        const partidosUnicos = [...new Set(todosLosCandidatos.map(c => c.partidoActual).filter(Boolean))].sort();
-        partidosUnicos.forEach(p => { selectPartido.innerHTML += `<option value="${p}">${p}</option>`; });
+        // PROCESAMIENTO CRÍTICO: Inyectar 2026 y ordenar
+        todosLosCandidatos.forEach(c => {
+            if (!c.historialElectoral) c.historialElectoral = [];
+            if (!c.historialPartidario) c.historialPartidario = [];
 
-        const selectCargo = document.getElementById('select-cargo');
-        const cargosUnicos = [...new Set(todosLosCandidatos.map(c => c.cargo).filter(Boolean))].sort();
-        cargosUnicos.forEach(c => { selectCargo.innerHTML += `<option value="${c}">${c}</option>`; });
+            if (c.partidoActual && c.cargo) {
+                const has2026 = c.historialElectoral.some(h => parseInt(h.anio) === 2026);
+                if (!has2026) {
+                    c.historialElectoral.push({
+                        anio: "2026",
+                        partido: c.partidoActual,
+                        rol: c.cargo,
+                        elegido: "Pendiente" 
+                    });
+                }
+            }
 
-        let timeoutBusqueda;
-        document.getElementById('input-busqueda').addEventListener('input', () => {
-            clearTimeout(timeoutBusqueda);
-            timeoutBusqueda = setTimeout(filtrarBaseDatos, 300);
+            c.historialElectoral.sort((a, b) => parseInt(a.anio) - parseInt(b.anio));
+            c.historialPartidario.sort((a, b) => parseInt(a.anio) - parseInt(b.anio));
         });
         
-        selectPartido.addEventListener('change', filtrarBaseDatos);
-        selectCargo.addEventListener('change', filtrarBaseDatos);
+        // Extraer partidos únicos 
+        const partidosUnicos = [...new Set(todosLosCandidatos.map(c => c.partidoActual).filter(Boolean))].sort();
+        
+        // 1. Iniciar Rankings
+        const selectRankings = document.getElementById('ranking-partido-select');
+        partidosUnicos.forEach(p => { selectRankings.innerHTML += `<option value="${p}">${p}</option>`; });
+        selectRankings.addEventListener('change', (e) => {
+            renderRankings(calcularRankings(todosLosCandidatos, e.target.value));
+        });
+        renderRankings(calcularRankings(todosLosCandidatos, "ALL"));
 
-        renderTarjetaCandidato(null);
-        renderHeatmap(todosLosCandidatos);
+        // 2. Iniciar Comparador 
+        const selectComp1 = document.getElementById('select-partido-1');
+        const selectComp2 = document.getElementById('select-partido-2');
+        partidosUnicos.forEach(p => { 
+            selectComp1.innerHTML += `<option value="${p}">${p}</option>`; 
+            selectComp2.innerHTML += `<option value="${p}">${p}</option>`; 
+        });
+
+        setupBuscadorComparador('input-busqueda-1', 'select-partido-1', 'preselector-panel-1', 'results-container-1');
+        setupBuscadorComparador('input-busqueda-2', 'select-partido-2', 'preselector-panel-2', 'results-container-2');
+        renderTarjetaCandidato(null, 'results-container-1');
+        renderTarjetaCandidato(null, 'results-container-2');
+
+        // 3. Iniciar Heatmap
+        const selectHeatmap = document.getElementById('heatmap-partido-select');
+        partidosUnicos.forEach(p => { selectHeatmap.innerHTML += `<option value="${p}">${p}</option>`; });
+        selectHeatmap.addEventListener('change', (e) => {
+            renderHeatmap(todosLosCandidatos, e.target.value);
+        });
+        renderHeatmap(todosLosCandidatos, "ALL");
+
+        // 4. Iniciar Timeline
+        const selectTimeline = document.getElementById('timeline-partido-select');
+        partidosUnicos.forEach(p => { selectTimeline.innerHTML += `<option value="${p}">${p}</option>`; });
+        selectTimeline.addEventListener('change', (e) => {
+            renderTimeline(todosLosCandidatos, e.target.value);
+        });
+        renderTimeline(todosLosCandidatos, "ALL");
 
     } catch (error) {
         console.error("Fallo:", error);
-        stats.innerHTML = `<span style="color:#d32f2f;">⚠️ ERROR: ${error.message}</span>`;
+        document.getElementById('rankings-wrapper').innerHTML = `<p style="color:red; text-align:center;">Error cargando datos: ${error.message}</p>`;
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    try { renderRankings(); } catch(e) {}
-    inicializarBaseDatos();
-});
+document.addEventListener('DOMContentLoaded', inicializarBaseDatos);
