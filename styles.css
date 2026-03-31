@@ -406,3 +406,137 @@ path.leaflet-interactive { transition: fill 0.8s ease-in-out, stroke 0.8s ease-i
 @media (max-width: 600px) {
     .filters-row { flex-direction: column; gap: 8px; }
 }
+
+/* =========================================
+   DISEÑO DEL UNIFORME CSS (CAMISETA + SHORT)
+   ========================================= */
+.uniform-kit {
+    width: 60px;
+    height: 75px;
+    position: relative;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* --- LA CAMISETA --- */
+.uniform-shirt {
+    width: 50px;
+    height: 45px;
+    background-color: var(--party-color, #ccc); /* El color dinámico */
+    border-radius: 6px 6px 2px 2px;
+    position: relative;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.15); /* Sombra para dar volumen */
+    z-index: 2;
+}
+
+/* Las mangas (Usando pseudo-elementos ::before y ::after) */
+.uniform-shirt::before, .uniform-shirt::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    width: 14px;
+    height: 20px;
+    background-color: inherit;
+    border-radius: 4px;
+    z-index: -1;
+}
+.uniform-shirt::before { left: -8px; transform: rotate(25deg); }
+.uniform-shirt::after { right: -8px; transform: rotate(-25deg); }
+
+/* Logo como escudo en la camiseta (Pecho derecho) */
+.logo-shirt {
+    position: absolute;
+    top: 10px;
+    right: 8px; /* Pegado a la derecha */
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    z-index: 5;
+    background-color: rgba(255,255,255,0.8); /* Fondo blanco sutil por si el logo se pierde */
+    border-radius: 50%;
+    padding: 1px;
+}
+
+/* --- EL SHORT --- */
+.uniform-shorts {
+    width: 44px;
+    height: 22px;
+    background-color: #ffffff; /* Short blanco */
+    border: 2px solid var(--party-color, #ccc); /* Borde con el color del partido */
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    position: relative;
+    margin-top: -2px; /* Se mete un poquito bajo la camiseta */
+}
+
+/* Hueco de las piernas */
+.uniform-shorts::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 10px;
+    background-color: #fafafa; /* Debe ser del mismo color que tu fondo .history-section */
+    border-radius: 4px 4px 0 0;
+}
+
+/* Logo en el short (Pierna izquierda visual) */
+.logo-shorts {
+    position: absolute;
+    bottom: 4px;
+    left: 4px; /* Pegado a la izquierda */
+    width: 10px;
+    height: 10px;
+    object-fit: contain;
+    z-index: 5;
+}
+
+/* =========================================
+   SELECTORES PERSONALIZADOS (CON LOGOS)
+   ========================================= */
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+    user-select: none;
+    font-family: inherit;
+}
+.custom-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    min-height: 42px;
+}
+.custom-select-trigger .c-text { display: flex; align-items: center; font-weight: 500;}
+.custom-select-trigger .c-arrow { font-size: 10px; color: #888; }
+.c-logo {
+    width: 22px; height: 22px; object-fit: contain; margin-right: 10px;
+}
+.c-icon-placeholder {
+    width: 22px; height: 22px; margin-right: 10px; background: #f0f0f0; 
+    border-radius: 50%; display: flex; align-items: center; 
+    justify-content: center; font-size: 11px;
+}
+.custom-select-options {
+    position: absolute; top: 100%; left: 0; right: 0; margin-top: 5px;
+    background-color: #fff; border: 1px solid #ddd; border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 999;
+    max-height: 250px; overflow-y: auto; display: none;
+}
+.custom-select-options.open { display: block; }
+.custom-option {
+    display: flex; align-items: center; padding: 10px 15px;
+    cursor: pointer; font-size: 14px; border-bottom: 1px solid #f9f9f9;
+    transition: background 0.2s;
+}
+.custom-option:hover { background-color: #f1f1f1; }
